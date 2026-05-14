@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZipMailer · Melton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --border-strong: #c8c5b8;
+    --text: #1a1917;
+    --text-muted: #6b6860;
+    --text-faint: #9e9b93;
+    --accent: #2b5ce6;
+    --accent-light: #ebeffd;
+    --accent-text: #1a3fa3;
+    --success: #1a7a4a;
+    --success-bg: #e8f7ee;
+    --danger: #c0392b;
+    --danger-bg: #fdecea;
+    --warning-bg: #fdf6e3;
+    --warning: #8a6d00;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 48px 24px;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 40px;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-mark svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: white;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-left: 48px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: opacity 0.2s;
+  }
+
+  .card.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .step-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 6px;
+  }
+
+  .step-label.done {
+    color: var(--success);
+  }
+
+  .card h2 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"], input[type="password"] {
+    flex: 1;
+    height: 38px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 0 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input[type="text"]:focus, input[type="password"]:focus {
+    border-color: var(--accent);
+  }
+
+  button {
+    height: 38px;
+    padding: 0 18px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  button:hover { background: #1e4fd4; }
+  button:active { transform: scale(0.98); }
+  button:disabled { background: var(--border-strong); color: var(--text-faint); cursor: not-allowed; transform: none; }
+
+  button.secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+  button.secondary:hover { background: var(--bg); }
+
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 16px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    color: var(--text);
+  }
+
+  .file-label:hover { background: var(--bg); }
+
+  .file-label svg {
+    width: 16px; height: 16px;
+    stroke: var(--text-muted); stroke-width: 2; fill: none;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  #file-input { display: none; }
+
+  .file-name {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+  }
+
+  .stat-box .stat-label {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 4px;
+  }
+
+  .stat-box .stat-value {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .progress-wrap {
+    margin-bottom: 16px;
+  }
+
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.25s ease;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .draft-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+  }
+
+  .draft-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .draft-row:last-child { border-bottom: none; }
+
+  .draft-row .dr-icon {
+    width: 18px; height: 18px; flex-shrink: 0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .draft-row .dr-icon.ok { background: var(--success-bg); }
+  .draft-row .dr-icon.err { background: var(--danger-bg); }
+
+  .draft-row .dr-icon svg {
+    width: 10px; height: 10px;
+    stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  .draft-row .dr-icon.ok svg { stroke: var(--success); }
+  .draft-row .dr-icon.err svg { stroke: var(--danger); }
+
+  .draft-row .dr-name { color: var(--text); flex: 1; }
+  .draft-row .dr-email { color: var(--text-faint); font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  .alert {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .alert.danger { background: var(--danger-bg); color: var(--danger); }
+  .alert.success { background: var(--success-bg); color: var(--success); }
+  .alert.warning { background: var(--warning-bg); color: var(--warning); }
+
+  .auth-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .auth-status.signed-in {
+    background: var(--success-bg);
+    color: var(--success);
+    border-color: transparent;
+  }
+
+  .auth-status .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <header>
+      <div class="logo-row">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/></svg>
+        </div>
+        <h1>ZipMailer</h1>
+      </div>
+      <p class="subtitle">Melton quarterly director outreach</p>
+    </header>
+    <div id="auth-status" class="auth-status">
+      <span class="dot"></span> Not signed in
+    </div>
+  </div>
+
+  <!-- Step 1: Auth -->
+  <div class="card" id="card-auth">
+    <div class="step-label" id="lbl-auth">Step 01</div>
+    <h2>Sign in with Microsoft</h2>
+    <p>Enter your Azure App Client ID and sign in with your Melton Microsoft 365 account. Drafts will be created in your Outlook Drafts folder.</p>
+    <div class="input-row">
+      <input type="text" id="client-id" placeholder="Azure App Client ID" autocomplete="off" />
+      <button onclick="startAuth()">Sign in →</button>
+    </div>
+    <div class="alert danger" id="auth-error"></div>
+  </div>
+
+  <!-- Step 2: Upload -->
+  <div class="card disabled" id="card-upload">
+    <div class="step-label" id="lbl-upload">Step 02</div>
+    <h2>Upload learner spreadsheet</h2>
+    <p>Upload the quarterly Excel file. Rows with a director assigned will be grouped automatically.</p>
+    <div class="file-row">
+      <label class="file-label" for="file-input">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Choose file
+      </label>
+      <input type="file" id="file-input" accept=".xlsx" onchange="handleFile(this)" />
+      <span class="file-name" id="file-name">No file chosen</span>
+    </div>
+    <div class="stats-grid" id="stats-grid" style="display:none;">
+      <div class="stat-box"><div class="stat-label">Learners</div><div class="stat-value" id="s-learners">—</div></div>
+      <div class="stat-box"><div class="stat-label">Directors</div><div class="stat-value" id="s-directors">—</div></div>
+      <div class="stat-box"><div class="stat-label">Drafts</div><div class="stat-value" id="s-drafts">—</div></div>
+    </div>
+    <div class="alert danger" id="upload-error"></div>
+  </div>
+
+  <!-- Step 3: Send -->
+  <div class="card disabled" id="card-send">
+    <div class="step-label" id="lbl-send">Step 03</div>
+    <h2>Create drafts in Outlook</h2>
+    <p>Creates one draft per director in your Outlook Drafts folder with a formatted learner table. Review and send from there.</p>
+    <div class="progress-wrap" id="progress-wrap" style="display:none;">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label"></div>
+    </div>
+    <div class="draft-list" id="draft-list" style="display:none;"></div>
+    <button id="send-btn" onclick="createDrafts()">Create all drafts →</button>
+    <div class="alert danger" id="send-error"></div>
+    <div class="alert success" id="send-success"></div>
+  </div>
+
+</div>
+
+<script>
+let accessToken = null;
+let emailGroups = [];
+
+const SUBJECT = 'Melton+ Learners in Your Area – Winter FY26';
+const BODY_PLAIN = `As part of our ongoing effort to guide learners from Melton+ programs to the excellent Melton courses you're offering, Jody and I have put together this list of Melton+ learners in your area from this past quarter's programs.
+
+Additionally, as we have entered a new fiscal year, we've changed the discount code that you should use to register for Melton Plus courses. The new code is MI_FREE_FY26.
+
+I hope this is helpful to you. Thank you for your continued partnership and have a great day!
+
+-SD`;
+
+function enable(cardId, lblId) {
+  document.getElementById(cardId).classList.remove('disabled');
+  document.getElementById(lblId).classList.add('done');
+}
+
+function showAlert(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideAlert(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function startAuth() {
+  const clientId = document.getElementById('client-id').value.trim();
+  if (!clientId) { showAlert('auth-error', 'Please enter your Azure App Client ID.'); return; }
+  hideAlert('auth-error');
+  localStorage.setItem('zm_client_id', clientId);
+  const redirectUri = encodeURIComponent(window.location.href.split('#')[0]);
+  const scope = encodeURIComponent('Mail.ReadWrite User.Read');
+  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=token&redirect_uri=${redirectUri}&scope=${scope}&response_mode=fragment`;
+  window.location.href = url;
+}
+
+function checkAuth() {
+  const hash = window.location.hash;
+  const saved = localStorage.getItem('zm_client_id');
+  if (saved) document.getElementById('client-id').value = saved;
+
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    accessToken = params.get('access_token');
+    if (accessToken) {
+      const status = document.getElementById('auth-status');
+      status.textContent = '';
+      const dot = document.createElement('span'); dot.className = 'dot';
+      status.appendChild(dot);
+      status.appendChild(document.createTextNode(' Signed in'));
+      status.classList.add('signed-in');
+      document.getElementById('lbl-auth').classList.add('done');
+      document.getElementById('lbl-auth').textContent = 'Step 01 ✓';
+      enable('card-upload', 'lbl-upload');
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }
+
+  if (hash && hash.includes('error=')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const error = params.get('error') || 'unknown';
+    const desc = params.get('error_description') || '';
+    showAlert('auth-error', 'Microsoft error: ' + error + (desc ? ' — ' + decodeURIComponent(desc.replace(/\+/g,' ')) : ''));
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+}
+
+function splitEmails(str) {
+  return String(str).split(/[;\/]/).map(s => s.trim()).filter(s => s && s !== '0' && s !== 'undefined');
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('file-name').textContent = file.name;
+  hideAlert('upload-error');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      const map = {};
+      rows.forEach(row => {
+        const dir = String(row['Director(s)'] || '').trim();
+        const dirEmail = String(row['Director Email'] || '').trim();
+        if (!dir || dir === ' ' || dir === '0') return;
+        const key = dir + '|||' + dirEmail;
+        if (!map[key]) map[key] = { director: dir, email: dirEmail, learners: [] };
+        map[key].learners.push(row);
+      });
+
+      emailGroups = Object.values(map);
+      if (emailGroups.length === 0) { showAlert('upload-error', 'No rows with directors found. Check the file format.'); return; }
+
+      const totalLearners = emailGroups.reduce((s, g) => s + g.learners.length, 0);
+      document.getElementById('s-learners').textContent = totalLearners;
+      document.getElementById('s-directors').textContent = emailGroups.length;
+      document.getElementById('s-drafts').textContent = emailGroups.length;
+      document.getElementById('stats-grid').style.display = 'grid';
+      document.getElementById('lbl-upload').textContent = 'Step 02 ✓';
+      enable('card-send', 'lbl-send');
+    } catch(err) {
+      showAlert('upload-error', 'Could not parse file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildHtml(group) {
+  const cols = ['First Name','Last Name','Email','Address','City','State','Zip Code'];
+  const thStyle = 'padding:6px 10px;border:1px solid #ddd;background:#f5f5f5;font-family:sans-serif;font-size:13px;text-align:left;font-weight:500;';
+  const tdStyle = 'padding:6px 10px;border:1px solid #ddd;font-family:sans-serif;font-size:13px;';
+  const headers = cols.map(c => `<th style="${thStyle}">${c}</th>`).join('');
+  const bodyRows = group.learners.map(l =>
+    '<tr>' + cols.map(c => `<td style="${tdStyle}">${String(l[c]||'').replace(/</g,'&lt;')}</td>`).join('') + '</tr>'
+  ).join('');
+  const table = `<table style="border-collapse:collapse;margin-top:20px;""><thead><tr>${headers}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+  const bodyHtml = `<div style="font-family:sans-serif;font-size:14px;line-height:1.6;color:#222;">${BODY_PLAIN.replace(/\n/g,'<br>')}</div>${table}`;
+  return bodyHtml;
+}
+
+async function createDrafts() {
+  if (!accessToken || emailGroups.length === 0) return;
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating drafts…';
+  hideAlert('send-error');
+  hideAlert('send-success');
+
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('draft-list').style.display = 'block';
+  document.getElementById('draft-list').innerHTML = '';
+
+  let done = 0, failed = 0;
+  const total = emailGroups.length;
+
+  for (const group of emailGroups) {
+    const emails = splitEmails(group.email);
+    const toAddr = emails[0] || '';
+    const ccAddrs = emails.slice(1);
+
+    const draft = {
+      subject: SUBJECT,
+      body: { contentType: 'HTML', content: buildHtml(group) },
+      toRecipients: toAddr ? [{ emailAddress: { address: toAddr } }] : [],
+      ccRecipients: ccAddrs.map(e => ({ emailAddress: { address: e } }))
+    };
+
+    let ok = false;
+    try {
+      const res = await fetch('https://graph.microsoft.com/v1.0/me/messages', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft)
+      });
+      if (!res.ok) { const t = await res.text(); throw new Error(t); }
+      ok = true; done++;
+    } catch(e) { failed++; console.error(e); }
+
+    addRow(group.director, toAddr, ok);
+    const pct = Math.round((done + failed) / total * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = `${done + failed} of ${total} processed`;
+  }
+
+  btn.textContent = `Done`;
+  if (failed === 0) {
+    showAlert('send-success', `✓ ${done} drafts created successfully. Go to your Outlook Drafts folder to review and send.`);
+  } else {
+    showAlert('send-error', `${done} drafts created, ${failed} failed. Check console for details.`);
+  }
+}
+
+function addRow(director, email, ok) {
+  const list = document.getElementById('draft-list');
+  const row = document.createElement('div');
+  row.className = 'draft-row';
+  const checkPath = ok
+    ? '<polyline points="4 12 8 16 14 8"/>'
+    : '<line x1="6" y1="6" x2="14" y2="14"/><line x1="14" y1="6" x2="6" y2="14"/>';
+  row.innerHTML = `
+    <div class="dr-icon ${ok ? 'ok' : 'err'}">
+      <svg viewBox="0 0 20 20">${checkPath}</svg>
+    </div>
+    <span class="dr-name">${director}</span>
+    <span class="dr-email">${email}</span>
+  `;
+  list.appendChild(row);
+  list.scrollTop = list.scrollHeight;
+}
+
+checkAuth();
+</script>
+</body>
+</html>
