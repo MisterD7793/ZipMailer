@@ -492,7 +492,7 @@ function checkAuth() {
 }
 
 function splitEmails(str) {
-  return String(str).split(/[;\/]/).map(s => s.trim()).filter(s => s && s !== '0' && s !== 'undefined');
+  return String(str).split(';').map(s => s.trim()).filter(s => s && s !== '0' && s !== 'undefined');
 }
 
 function handleFile(input) {
@@ -519,7 +519,25 @@ function handleFile(input) {
         map[key].learners.push(row);
       });
 
-      emailGroups = Object.values(map);
+      // Slash = separate emails; semicolon = CC on one email
+      const expanded = [];
+      Object.values(map).forEach(group => {
+        const slashEmails = group.email.split('/').map(s => s.trim()).filter(Boolean);
+        const slashDirs = group.director.split('/').map(s => s.trim()).filter(Boolean);
+        if (slashEmails.length > 1) {
+          slashEmails.forEach((email, i) => {
+            expanded.push({
+              director: slashDirs[i] || slashDirs[0],
+              email: email,
+              learners: group.learners
+            });
+          });
+        } else {
+          expanded.push(group);
+        }
+      });
+
+      emailGroups = expanded;
       if (emailGroups.length === 0) { showAlert('upload-error', 'No rows with directors found. Check the file format.'); return; }
 
       const totalLearners = emailGroups.reduce((s, g) => s + g.learners.length, 0);
